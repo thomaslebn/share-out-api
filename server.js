@@ -1,4 +1,7 @@
 const express = require("express");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv").config();
+const CONNECT_MONGODB_ATLAS = process.env.CONNECT_MONGODB_ATLAS;
 
 const HttpError = require("./models/http-error");
 
@@ -24,4 +27,7 @@ app.use((error, req, res, next) => {
   return res.json({ message: error.message || "An unknown error occurred !" });
 });
 
-app.listen(5000);
+mongoose
+  .connect(CONNECT_MONGODB_ATLAS)
+  .then(() => app.listen(5000))
+  .catch((err) => console.log(err));
