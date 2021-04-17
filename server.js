@@ -1,5 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const connectConfig = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useCreateIndex: true,
+};
 const dotenv = require("dotenv").config();
 const CONNECT_MONGODB_ATLAS = process.env.CONNECT_MONGODB_ATLAS;
 
@@ -28,6 +33,6 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(CONNECT_MONGODB_ATLAS)
+  .connect(CONNECT_MONGODB_ATLAS, connectConfig)
   .then(() => app.listen(5000))
   .catch((err) => console.log(err));
