@@ -30,7 +30,7 @@ const signUp = async (req, res, next) => {
   }
 
   if (existingUser) {
-    const error = new HttpError("Email already exists.", 422);
+    const error = new HttpError("Error with signup, try later.", 422);
     return next(error);
   }
 
@@ -69,7 +69,12 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(202).json({ message: "Logged in." });
+  res
+    .status(202)
+    .json({
+      message: "Logged in.",
+      user: existingUser.toObject({ getters: true }),
+    });
 };
 
 module.exports = {
