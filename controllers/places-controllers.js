@@ -1,3 +1,4 @@
+const fs = require("fs");
 const mongoose = require("mongoose");
 
 const HttpError = require("../models/http-error");
@@ -74,8 +75,7 @@ const createPlace = async (req, res, next) => {
     description,
     address,
     location: coordinates,
-    image:
-      "https://fr.wikipedia.org/wiki/Empire_State_Building#/media/Fichier:Empire_State_Building_from_the_Top_of_the_Rock.jpg",
+    image: req.file.path,
     creator,
   });
 
@@ -83,25 +83,32 @@ const createPlace = async (req, res, next) => {
   try {
     user = await User.findById(creator);
   } catch (err) {
-    const error = new HttpError("Creating place failed, please try again", 500);
+    const error = new HttpError(
+      "Creating place failed, please try again.",
+      500
+    );
     return next(error);
   }
 
   if (!user) {
-    const error = new HttpError("Could not find user for provided id", 404);
+    const error = new HttpError("Could not find user for provided id.", 404);
     return next(error);
   }
 
+  console.log(user);
+
   try {
-    // init the session - start the transaction
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    await createdPlace.save({ session: session });
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await createdPlace.save({ session: sess });
     user.places.push(createdPlace);
-    await user.save({ session: session });
-    await session.commitTransaction();
+    await user.save({ session: sess });
+    await sess.commitTransaction();
   } catch (err) {
-    const error = new HttpError("Creating place failed, please try again", 500);
+    const error = new HttpError(
+      "Creating place failed, please try again.",
+      500
+    );
     return next(error);
   }
 
@@ -163,6 +170,8 @@ const deletePlaceById = async (req, res, next) => {
     return next(error);
   }
 
+  const imagPath = place.image;
+
   try {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -176,6 +185,9 @@ const deletePlaceById = async (req, res, next) => {
       500
     );
   }
+
+  fs.unlink(imagPath, (err) => {
+  });
 
   res.status(200).json({ message: "The place has been deleted." });
 };
