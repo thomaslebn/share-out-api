@@ -4,6 +4,9 @@ const HttpError = require("../models/http-error");
 
 const User = require("../models/user-model");
 
+const dotenv = require("dotenv").config();
+const JWT_KEY = process.env.JWT_KEY;
+
 const getAllUsers = async (req, res, next) => {
   let users;
   try {
@@ -72,7 +75,7 @@ const signUp = async (req, res, next) => {
   try {
     token = jwt.sign(
       { userId: createdUser.id, email: createdUser.email },
-      "private_key",
+      JWT_KEY,
       { expiresIn: "1h" }
     );
   } catch (err) {
@@ -134,7 +137,7 @@ const login = async (req, res, next) => {
   try {
     token = jwt.sign(
       { userId: existingUser.id, email: existingUser.email },
-      "supersecret_dont_share",
+      JWT_KEY,
       { expiresIn: "1h" }
     );
   } catch (err) {
