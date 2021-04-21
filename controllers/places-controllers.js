@@ -61,7 +61,7 @@ const getPlacesByUserId = async (req, res, next) => {
 };
 
 const createPlace = async (req, res, next) => {
-  const { title, description, address, creator } = req.body;
+  const { title, description, address } = req.body;
 
   let coordinates;
   try {
@@ -76,12 +76,12 @@ const createPlace = async (req, res, next) => {
     address,
     location: coordinates,
     image: req.file.path,
-    creator,
+    creator: req.userData.userId,
   });
 
   let user;
   try {
-    user = await User.findById(creator);
+    user = await User.findById(req.userData.userId);
   } catch (err) {
     const error = new HttpError(
       "Creating place failed, please try again.",
@@ -94,8 +94,6 @@ const createPlace = async (req, res, next) => {
     const error = new HttpError("Could not find user for provided id.", 404);
     return next(error);
   }
-
-  console.log(user);
 
   try {
     const sess = await mongoose.startSession();
@@ -117,16 +115,21 @@ const createPlace = async (req, res, next) => {
 
 const updatePlaceById = async (req, res, next) => {
   const { title, description } = req.body;
-  const pId = req.params.pId;
+  const placeId = req.params.pId;
 
   let place;
   try {
-    place = await Place.findById(pId);
+    place = await Place.findById(placeId);
   } catch (err) {
     const error = new HttpError(
-      "Something went wrong, could not update place",
+      "Something went wrong, could not update place.",
       500
     );
+    return next(error);
+  }
+
+  if (place.creator.toString() !== req.userData.userId) {
+    const error = new HttpError("You are not allowed to edit this place.", 401);
     return next(error);
   }
 
@@ -137,7 +140,7 @@ const updatePlaceById = async (req, res, next) => {
     await place.save();
   } catch (err) {
     const error = new HttpError(
-      "Something went wrong, could not update place",
+      "Something went wrong, could not update place.",
       500
     );
     return next(error);
@@ -156,7 +159,6 @@ const deletePlaceById = async (req, res, next) => {
       "creator",
       "-name -email -password"
     );
-    console.log(place);
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not find a place.",
@@ -167,6 +169,14 @@ const deletePlaceById = async (req, res, next) => {
 
   if (!place) {
     const error = new HttpError("Could not find place for provided id", 404);
+    return next(error);
+  }
+
+  if (place.creator.id !== req.userData.userId) {
+    const error = new HttpError(
+      "You are not allowed to delete this place.",
+      403
+    );
     return next(error);
   }
 
@@ -186,8 +196,7 @@ const deletePlaceById = async (req, res, next) => {
     );
   }
 
-  fs.unlink(imagPath, (err) => {
-  });
+  fs.unlink(imagPath, (err) => {});
 
   res.status(200).json({ message: "The place has been deleted." });
 };
